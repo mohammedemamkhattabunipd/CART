@@ -1,17 +1,10 @@
 #Aim: is to upload Data For Pre-infusion Total 24 Sample
 library(Seurat)
-#library(patchwork)
 library(dplyr)
-# library(tidyverse)
-# library(rhdf5)
 library(ggplot2)
-# library(gridExtra)
-# library(scDblFinder)
-# library(scater)
-# library(patchwork)
 library(Matrix)
-# library(Rcpp)
 
+#Set thw orking directory where you have your data
 setwd(dir = "Downloads/CART_GitHub/Data/")  
 
 #Haradvhala Data Upload 
@@ -22,7 +15,7 @@ Preinf_Samples_h <- list()
 #Selecting only 3 samples
 folders_h <- folders_h[1:3]
 
-# Seurat Object Creation
+# Seurat Object Creation for Haradvhala
 for (folder in folders_h) {
   print(paste("Processing folder:", folder))
   data_preinf_h <- Read10X(data.dir = folder) #Each folder contains barcodes, genes and matrix files
@@ -36,16 +29,15 @@ for (folder in folders_h) {
 print(length(Preinf_Samples_h))
 
 
-#Louie Data Upload ################################################################################
+#Louie Data Upload
 main_directory_louie <- "Preinfusion_l/"
 folders_louie <- list.dirs(path = main_directory_louie, full.names = TRUE, recursive = FALSE)
 
 #Only Three Samples
-
 folders_louie <- folders_louie[1:3]
-
 Preinf_Samples_l <- list()
 
+# Seurat Object Creation for Louie
 for (folder_l in folders_louie) {
   print(paste("Processing folder:", folder_l))
 
@@ -66,14 +58,14 @@ for (folder_l in folders_louie) {
 
 print(length(Preinf_Samples_l))
 
-#Merge Seurat Objects
+#Merge Seurat Objects into One
 x_merge <- Preinf_Samples_h[[1]]
 y_merge <- c(Preinf_Samples_h[2:3], Preinf_Samples_l)
 obj <- Reduce(function(x, y) merge(x, y), y_merge, init = x_merge)
 
-View(obj@meta.data)
+View(obj@meta.data) #You can investigate the metadata of the object if needed
 
-##########################################
+# Seurat Data Workflow
 obj <- NormalizeData(obj)
 obj <- FindVariableFeatures(obj)
 obj <- ScaleData(obj)
@@ -81,9 +73,10 @@ obj <- RunPCA(obj)
 ElbowPlot(obj) # The first 15 PCA will be selected
 
 obj <- FindNeighbors(obj)
-obj <- FindClusters(obj, cluster.name = "unintegrated_pre", resolution = 0.7, algorithm = 2) #resolution is a parameter to control the number of clusters, while algorthim is the clustering algorithm to be used
+#In FindClusters function resolution is a parameter to control the number of clusters, while algorithm is the clustering algorithm to be used
+obj <- FindClusters(obj, cluster.name = "unintegrated_pre", resolution = 0.7, algorithm = 2) 
 obj <- RunUMAP(obj, dims = 1:15)
-
+#Plotting the UMAP
 plot1 <- DimPlot(obj, group.by = "id") + ggtitle("unintegrated_preinfusion (Samples)")
 plot1
 
@@ -99,7 +92,7 @@ obj_cca <- RunUMAP(obj_cca, dims = 1:15, reduction = "integrated.cca", reduction
 plot2 <- DimPlot(obj_cca,reduction = "umap.cca", group.by = "id") + ggtitle("cca_preinfusion")
 plot2
 
-#Harmony Integration #######################################################################
+#Harmony Integration
 library(harmony)
 
 obj_har <- NormalizeData(obj)
@@ -113,35 +106,36 @@ obj_har <- FindNeighbors(obj_har, reduction= "harmony", dims = 1:15)
 obj_har <- FindClusters(obj_har, resolution = 0.7, algorithm = 2) #resolution is a parameter to control the number of clusters, while algorthim is the clustering algorithm to be used
 obj_har <- RunUMAP(obj_har, reduction= "harmony", dims = 1:15)
 
-
+# Plotting the UMAPs
 plot1_har <- DimPlot(obj_har,group.by = "id", label = TRUE, repel = TRUE) + ggtitle("Harmony (Samples)") + NoLegend()
 plot2_har <- DimPlot(obj_har,group.by = "seurat_clusters", label = TRUE) + ggtitle("Harmony (Cells)") + NoLegend()
 plot1_har
 plot2_har
 
-#### Save the Seurat Objects for Later if needed
+#### Save the Seurat Objects for Later if needed ###
 SaveSeuratRds(object = obj, file = "obj_un_4_azimuth.rds")
 SaveSeuratRds(object = obj_cca, file = "obj_cca_4_azimuth.rds")
 SaveSeuratRds(object = obj_har, file = "obj_har_4_azimuth.rds")
 
-#### Azimuth Cell Type Annotation
+#### Cell Type Annotation using Azimuth tool
 library(Azimuth)
 
-obj <- readRDS("obj_un_4_azimuth.rds")
-obj_cca <- readRDS("obj_cca_4_azimuth.rds")
-obj_har <- readRDS("obj_har_4_azimuth.rds")
+#obj <- readRDS("obj_un_4_azimuth.rds")
+#obj_cca <- readRDS("obj_cca_4_azimuth.rds")
+#obj_har <- readRDS("obj_har_4_azimuth.rds")
 
+#Merging the layers of the Seurat object
 megeredobj = JoinLayers(obj)
 megeredobj_2 = JoinLayers(obj_cca)
 megeredobj_har = JoinLayers(obj_har)
 
-
+#Running Azimuth for cell type annotation
 obj_azimuth <- RunAzimuth(megeredobj, reference = "pbmcref")
 obj_cca_azimuth <- RunAzimuth(megeredobj_2, reference = "pbmcref")
 obj_har_azimuth <- RunAzimuth(megeredobj_har, reference = "pbmcref")
 
 
-
+#Plotting the UMAPs with cell type annotations
 plot1_azimuth <- DimPlot(obj_azimuth, group.by = "predicted.celltype.l2", label = TRUE, label.size = 3, repel = TRUE) + NoLegend() +ggtitle("unintegrated Preinfusion") 
 plot2_azimuth <- DimPlot(obj_cca_azimuth,reduction = "umap.cca", group.by = "predicted.celltype.l2", label = TRUE, label.size = 3 , repel = TRUE) + NoLegend()  + ggtitle("CCA Preinfusion")
 plot3_azimuth <- DimPlot(obj_har_azimuth, group.by = "predicted.celltype.l2", label = TRUE, label.size = 3 , repel = TRUE) + NoLegend() + ggtitle("Harmony Preinfusion")
@@ -149,12 +143,9 @@ plot3_azimuth <- DimPlot(obj_har_azimuth, group.by = "predicted.celltype.l2", la
 plot1_azimuth + plot2_azimuth + plot3_azimuth
 
 
-#### SAVE Final rds files
+#### SAVE Final Seurat objects with Azimuth Annotations ####
 SaveSeuratRds(object = obj_azimuth, file = "azimuth_obj_Preinfusion_unintegrated.rds")
 SaveSeuratRds(object = obj_2_azimuth, file = "azimuth_obj_Preinfusion_CCA.rds")
 SaveSeuratRds(object = obj_har_azimuth, file = "azimuth_obj_Preinfusion_Harmony.rds")
 
 
-
-
-### Name the plots good and the varianles, plus adding some info
