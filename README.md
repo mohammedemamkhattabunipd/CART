@@ -1,4 +1,4 @@
-# CAR T-cell Atlas: Understanding Patient Response Variability with Single-cell Integration
+# CAR T-cell Atlas for Identifying Patient Response Variability with Single-cell Integration
 
 **Author:** Mohammed Emam Shebl Attia Khattab  
 **Supervisor:** Gabriele Sales
