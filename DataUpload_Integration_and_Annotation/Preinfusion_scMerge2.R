@@ -47,7 +47,7 @@ process_directory <- function(parent_dir, id_prefix) {
     sce <- sce[, sce$percent.mt < 10]  # Filter cells with high mitochondrial content
     
     # Add batch ID and metadata
-    sce$id <- paste0(id_prefix, "_", basename(folder))
+    sce$sample <- paste0(id_prefix, "_", basename(folder))
     colData(sce)$sample_type <- rep("Preinfusion", ncol(sce))
     colData(sce)$condition <- rep("Baseline", ncol(sce))
     
@@ -93,14 +93,13 @@ logcounts(combined_sce) <- log1p(counts(combined_sce))
 colnames(combined_sce@assays@data$logcounts) <- make.unique(colnames(combined_sce@assays@data$logcounts))
 
 combined_sce <- scater::runUMAP(combined_sce, ncomponents = 2)
-plot1 <- scater::plotUMAP(combined_sce, colour_by = "id")+
+plot1 <- scater::plotUMAP(combined_sce, colour_by = "sample")+
   ggplot2::ggtitle("scMerge2 Integrated Cells")
 
 plot1
 
 # Save the UMAP plot if you want
 ggplot2::ggsave("scMerge2_Unintegrated_umap.png", plot = plot1, width = 8, height = 6, dpi = 300)
-
 
 # Perform integration using scMerge2
 integrated_sce <- scMerge2(
@@ -111,11 +110,11 @@ integrated_sce <- scMerge2(
 #add scMerge2 to the sce object
 assay(combined_sce, "scMerge2", withDimnames = FALSE) <- integrated_sce$newY
 
-#combined_sce = scater::runPCA(combined_sce, exprs_values = 'scMerge2')
-#scater::plotPCA(combined_sce, colour_by = 'id')
+#   combined_sce = scater::runPCA(combined_sce, exprs_values = 'scMerge2')
+#   scater::plotPCA(combined_sce, colour_by = 'sample')
 
 combined_sce <- scater::runUMAP(combined_sce, exprs_values = "scMerge2", ncomponents = 2)
-plot2 <- scater::plotUMAP(combined_sce, colour_by = "id")+
+plot2 <- scater::plotUMAP(combined_sce, colour_by = "sample")+
   ggplot2::ggtitle("scMerge2 Integrated Cells")
 
 plot2
@@ -145,7 +144,108 @@ scMerge_seurat <- as.Seurat(combined_sce)
 obj_azimuth <- RunAzimuth(scMerge_seurat, assay = "originalexp", reference = "pbmcref")
 obj_azimuth
 
-plot3 <- DimPlot(obj_azimuth, reduction = "UMAP", group.by = "id", raster = FALSE)+NoLegend()
+plot3 <- DimPlot(obj_azimuth, reduction = "UMAP", group.by = "sample", raster = FALSE)+NoLegend()
 plot4 <- DimPlot(obj_azimuth, reduction = "UMAP", group.by = "predicted.celltype.l1", raster = FALSE)
 
 plot3 + plot4
+
+# But first add the missing metadata columns that will be needed for the analysis
+metadata <- obj_azimuth@meta.data
+
+metadata$response <- NA
+metadata$Sex <- NA
+metadata$Age <- NA
+
+unique_ids <- unique(metadata$sample)
+unique_ids
+
+metadata$response[metadata$sample == "GSE224550_P1_PBMC_Preinfusion"] <- "CR"
+metadata$response[metadata$sample == "GSE224550_P2_PBMC_Preinfusion"] <- "PD"
+metadata$response[metadata$sample == "GSE224550_P7_PBMC_Preinfusion"] <- "CR"
+metadata$response[metadata$sample == "GSE224550_P8_PBMC_Preinfusion"] <- "CR"
+
+#Haradhvala  ###############################################
+
+metadata$response[metadata$sample == "Patient10-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient11-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient12-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient13-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient14-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient15-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient17-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient18-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient19-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient20-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient21-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient22-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient23-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient24-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient25-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient30-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient31-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient6-Baseline"] <- "PD"
+metadata$response[metadata$sample == "Patient8-Baseline"] <- "CR"
+metadata$response[metadata$sample == "Patient9-Baseline"] <- "PD"
+
+
+# Update 'Sex' based on sample
+#Louie
+metadata$Sex[metadata$sample == "GSE224550_P1_PBMC_Preinfusion"] <- "F"
+metadata$Sex[metadata$sample == "GSE224550_P2_PBMC_Preinfusion"] <- "M"
+metadata$Sex[metadata$sample == "GSE224550_P7_PBMC_Preinfusion"] <- "M"
+metadata$Sex[metadata$sample == "GSE224550_P8_PBMC_Preinfusion"] <- "M"
+
+# Haradhvala
+metadata$Sex[metadata$sample == "Patient10-Baseline"] <- "F"
+metadata$Sex[metadata$sample == "Patient11-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient12-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient13-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient14-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient15-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient17-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient18-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient19-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient20-Baseline"] <- "F"
+metadata$Sex[metadata$sample == "Patient21-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient22-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient23-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient24-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient25-Baseline"] <- "F"
+metadata$Sex[metadata$sample == "Patient30-Baseline"] <- "F"
+metadata$Sex[metadata$sample == "Patient31-Baseline"] <- "F"
+metadata$Sex[metadata$sample == "Patient6-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient8-Baseline"] <- "M"
+metadata$Sex[metadata$sample == "Patient9-Baseline"] <- "F"
+
+# Update 'Age' based on sample
+# Louie
+metadata$Age[metadata$sample == "GSE224550_P1_PBMC_Preinfusion"] <- "25"
+metadata$Age[metadata$sample == "GSE224550_P2_PBMC_Preinfusion"] <- "66"
+metadata$Age[metadata$sample == "GSE224550_P7_PBMC_Preinfusion"] <- "47"
+metadata$Age[metadata$sample == "GSE224550_P8_PBMC_Preinfusion"] <- "30"
+
+# Haradhvala
+metadata$Age[metadata$sample == "Patient10-Baseline"] <- "66"
+metadata$Age[metadata$sample == "Patient11-Baseline"] <- "57"
+metadata$Age[metadata$sample == "Patient12-Baseline"] <- "55"
+metadata$Age[metadata$sample == "Patient13-Baseline"] <- "70"
+metadata$Age[metadata$sample == "Patient14-Baseline"] <- "62"
+metadata$Age[metadata$sample == "Patient15-Baseline"] <- "38"
+metadata$Age[metadata$sample == "Patient17-Baseline"] <- "48"
+metadata$Age[metadata$sample == "Patient18-Baseline"] <- "71"
+metadata$Age[metadata$sample == "Patient19-Baseline"] <- "67"
+metadata$Age[metadata$sample == "Patient20-Baseline"] <- "79"
+metadata$Age[metadata$sample == "Patient21-Baseline"] <- "52"
+metadata$Age[metadata$sample == "Patient22-Baseline"] <- "61"
+metadata$Age[metadata$sample == "Patient23-Baseline"] <- "70"
+metadata$Age[metadata$sample == "Patient24-Baseline"] <- "77"
+metadata$Age[metadata$sample == "Patient25-Baseline"] <- "64"
+metadata$Age[metadata$sample == "Patient30-Baseline"] <- "34"
+metadata$Age[metadata$sample == "Patient31-Baseline"] <- "76"
+metadata$Age[metadata$sample == "Patient6-Baseline"] <- "77"
+metadata$Age[metadata$sample == "Patient8-Baseline"] <- "65"
+metadata$Age[metadata$sample == "Patient9-Baseline"] <- "56"
+
+#Update the metadata
+obj_azimuth@meta.data <- metadata
+
