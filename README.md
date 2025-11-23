@@ -23,7 +23,7 @@ CAR T-cell therapy offers groundbreaking treatment for hematological malignancie
 | Pre-infusion     | 24            | ~120,000   |
 | Day 7 Post-infusion | 65            | ~260,000   |
 
-![PreinfusionandPostinfusion](/images/Datacopy.png)
+![Preinfusion and Postinfusion from the 3 papers mentioned](/images/Datacopy.png)
 
 ---
 
