@@ -37,6 +37,9 @@ CAR T-cell therapy offers groundbreaking treatment for hematological malignancie
 ### 2. Batch Effect Correction
 - Applied the Integration tools **Harmony**, **Scanorama**, **CCA**, and **scMerge2**.
 - Integration ensures fair comparison across datasets.
+![Alt text](/images/preinf_clusters_scanorama)
+![Alt text](/images/postinf_clusters_scanorama)
+
 
 ### 3. Cell Type Annotation
 - Annotated clusters based on canonical markers.
